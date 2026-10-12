@@ -7,20 +7,28 @@ type SR = {
   start(): void;
   stop(): void;
   abort(): void;
-  onresult: ((e: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
+  onresult:
+    | ((e: {
+        resultIndex: number;
+        results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
+      }) => void)
+    | null;
   onend: (() => void) | null;
   onerror: ((e: { error: string }) => void) | null;
   onspeechstart?: (() => void) | null;
 };
 
-export function getRecognition(): SR | null {
+export function getRecognition(continuous = true): SR | null {
   if (typeof window === "undefined") return null;
-  const W = window as unknown as { SpeechRecognition?: new () => SR; webkitSpeechRecognition?: new () => SR };
+  const W = window as unknown as {
+    SpeechRecognition?: new () => SR;
+    webkitSpeechRecognition?: new () => SR;
+  };
   const C = W.SpeechRecognition || W.webkitSpeechRecognition;
   if (!C) return null;
   const r = new C();
   r.lang = navigator.language || "en-US";
-  r.continuous = false;
+  r.continuous = continuous;
   r.interimResults = true;
   return r;
 }
@@ -32,19 +40,23 @@ export function speechSupported() {
 /** Speaks text sentence-by-sentence as it streams in. */
 export class Speaker {
   private pending = "";
+  private activeUtterances = new Set<SpeechSynthesisUtterance>();
   voiceURI = "";
   rate = 1;
   onStart?: () => void;
   onIdle?: () => void;
 
   get speaking() {
-    return typeof speechSynthesis !== "undefined" && (speechSynthesis.speaking || speechSynthesis.pending);
+    return (
+      typeof speechSynthesis !== "undefined" &&
+      (speechSynthesis.speaking || speechSynthesis.pending)
+    );
   }
 
   push(chunk: string) {
     this.pending += chunk;
     const m = this.pending.match(/^([\s\S]*?[.!?…])(\s+|$)([\s\S]*)$/);
-    if (m && m[1].trim().length > 1 && m[2]) {
+    if (m && m[1] && m[1].trim().length > 1 && m[2] && m[3] !== undefined) {
       this.say(m[1]);
       this.pending = m[3];
       this.push("");
@@ -56,21 +68,29 @@ export class Speaker {
     this.pending = "";
   }
 
-  private say(text: string) {
+  say(text: string) {
     if (typeof speechSynthesis === "undefined") return;
-    const u = new SpeechSynthesisUtterance(text.trim());
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const u = new SpeechSynthesisUtterance(trimmed);
     const v = speechSynthesis.getVoices().find((x) => x.voiceURI === this.voiceURI);
     if (v) u.voice = v;
     u.rate = this.rate;
+    this.activeUtterances.add(u);
+
     u.onstart = () => this.onStart?.();
-    u.onend = () => {
+    const handleEnd = () => {
+      this.activeUtterances.delete(u);
       if (!speechSynthesis.speaking && !speechSynthesis.pending) this.onIdle?.();
     };
+    u.onend = handleEnd;
+    u.onerror = handleEnd;
     speechSynthesis.speak(u);
   }
 
   stop() {
     this.pending = "";
+    this.activeUtterances.clear();
     if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
     this.onIdle?.();
   }

@@ -12,17 +12,21 @@ const CAMERA = [
   /\bwhat('?s| is| are) (this|that|these|those)\b(?!\s+(word|term|concept|mean))/,
   /\bwhat am i (looking at|holding|seeing|wearing)\b/,
   /\bwhat('?s| is) in front of me\b/,
-  /\b(describe|identify|recognize|read) (this|that|these|the view|what)\b/,
-  /\bwhat colou?r is\b/,
+  /\b(describe|identify|recognize) (what is|what's|this|that|these|the view|what)\b/,
+  /\bwhat colou?r is (this|that|it)\b/,
   /\bwhat (object|thing|plant|animal|brand|food)s? (is|are) (this|that|these)\b/,
-  /\b(can|do) you see\b/,
+  /\b(can|could) you (see|read) (this|what is here|the text)?\b/,
   /\blook at (this|that|these|me)\b/,
   /\bhow (do i|does) (this|it) look\b/,
   /\bhow many .* (here|in front of me|do you see)\b/,
+  /\b(open|start|show|enable|turn on) (the )?camera\b/,
   /\bcamera\b/,
 ];
 
-const STOP = [/\b(turn off|close|stop|hide) (the )?(camera|screen ?share|sharing)\b/, /\bstop looking\b/];
+const STOP = [
+  /\b(turn off|close|stop|hide) (the )?(camera|screen ?share|sharing)\b/,
+  /\bstop looking\b/,
+];
 const FOLLOW_UP = [/\b(it|that|this one|the (left|right|other) one|what about|and now|now)\b/];
 
 /**

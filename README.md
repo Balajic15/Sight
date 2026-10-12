@@ -1,36 +1,39 @@
-# Aura Assistant
+# Echo — Voice Assistant
 
-@secret:GOOGLE_API_KEY
+A calm, minimalist, voice-first AI assistant built as a React-based Progressive Web App (PWA).
 
-Build a production-quality voice-first AI assistant as a React-based PWA following the attached specification, keeping the Google API key securely in backend edge functions and hiding any provider/model branding from the client UI.
+## Features
 
-Key requirements:
-- Voice-first real-time conversational interface with live transcription, voice response, and interruption handling
-- Minimalist monochrome UI (black, white, soft gray, subtle borders, no glowing orbs or gradients)
-- Intent-driven automatic camera/vision activation and screen-share when visual context is requested
-- Single minimal input bar with text and voice controls
-- Conversation history and settings
-- Backend edge function proxying requests to Gemini with GOOGLE_API_KEY so credentials stay private
+- **Voice-first interface**: Real-time conversational interface with live speech transcription, voice response, and interruption handling.
+- **Monochrome minimalist aesthetic**: Clean typography, subtle borders, distraction-free design.
+- **Vision & context sharing**: Intent-driven automatic camera activation and screen sharing when visual context is requested.
+- **Unified input bar**: Integrated input supporting both direct voice and keyboard text interactions.
+- **Local persistence**: Conversation history and custom preferences saved locally in browser storage.
+- **Secure backend proxy**: Edge route proxying AI requests with private API keys, keeping credentials and provider branding completely out of the client browser.
 
-This project was built with [Lovable](https://lovable.dev).
+## Getting Started
 
-**Live app**: https://echo-craft-68.lovable.app
+### Prerequisites
 
-## Build with Lovable
+- Node.js (v18+) and npm / pnpm / bun
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/81e88dac-8d7f-4a68-8c25-b21b7b1e8697).
+### Environment Configuration
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Configure the `GOOGLE_API_KEY` environment variable in your runtime environment or a `.env` file:
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+GOOGLE_API_KEY=your_gemini_api_key
+```
+
+### Installation & Development
+
+```sh
+# Install dependencies
+npm install
+
+# Start the local development server
 npm run dev
+
+# Build for production
+npm run build
 ```

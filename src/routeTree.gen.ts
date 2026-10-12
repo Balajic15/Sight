@@ -11,6 +11,21 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiConversationsRouteImport } from './routes/api/conversations'
+import { Route as ApiMediaRouteImport } from './routes/api/media'
+import { Route as ApiSearchRouteImport } from './routes/api/search'
+import { Route as ApiSettingsRouteImport } from './routes/api/settings'
+import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
+import { Route as ApiAdminKeysRouteImport } from './routes/api/admin/keys'
+import { Route as ApiAdminRevokeRouteImport } from './routes/api/admin/revoke'
+import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
+import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
+import { Route as ApiAuthRedeemRouteImport } from './routes/api/auth/redeem'
+import { Route as ApiAuthValidateRouteImport } from './routes/api/auth/validate'
+import { Route as ApiChatMultimodalRouteImport } from './routes/api/chat.multimodal'
+import { Route as ApiFilesUploadRouteImport } from './routes/api/files/upload'
+import { Route as ApiImagesEditRouteImport } from './routes/api/images/edit'
+import { Route as ApiImagesGenerateRouteImport } from './routes/api/images/generate'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +37,217 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiConversationsRoute = ApiConversationsRouteImport.update({
+  id: '/api/conversations',
+  path: '/api/conversations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMediaRoute = ApiMediaRouteImport.update({
+  id: '/api/media',
+  path: '/api/media',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSearchRoute = ApiSearchRouteImport.update({
+  id: '/api/search',
+  path: '/api/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSettingsRoute = ApiSettingsRouteImport.update({
+  id: '/api/settings',
+  path: '/api/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
+  id: '/api/transcribe',
+  path: '/api/transcribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminKeysRoute = ApiAdminKeysRouteImport.update({
+  id: '/api/admin/keys',
+  path: '/api/admin/keys',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminRevokeRoute = ApiAdminRevokeRouteImport.update({
+  id: '/api/admin/revoke',
+  path: '/api/admin/revoke',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminUsersRoute = ApiAdminUsersRouteImport.update({
+  id: '/api/admin/users',
+  path: '/api/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthLogoutRoute = ApiAuthLogoutRouteImport.update({
+  id: '/api/auth/logout',
+  path: '/api/auth/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthRedeemRoute = ApiAuthRedeemRouteImport.update({
+  id: '/api/auth/redeem',
+  path: '/api/auth/redeem',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthValidateRoute = ApiAuthValidateRouteImport.update({
+  id: '/api/auth/validate',
+  path: '/api/auth/validate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatMultimodalRoute = ApiChatMultimodalRouteImport.update({
+  id: '/multimodal',
+  path: '/multimodal',
+  getParentRoute: () => ApiChatRoute,
+} as any)
+const ApiFilesUploadRoute = ApiFilesUploadRouteImport.update({
+  id: '/api/files/upload',
+  path: '/api/files/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiImagesEditRoute = ApiImagesEditRouteImport.update({
+  id: '/api/images/edit',
+  path: '/api/images/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiImagesGenerateRoute = ApiImagesGenerateRouteImport.update({
+  id: '/api/images/generate',
+  path: '/api/images/generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/api/chat': typeof ApiChatRoute
+  '/api/chat': typeof ApiChatRouteWithChildren
+  '/api/conversations': typeof ApiConversationsRoute
+  '/api/media': typeof ApiMediaRoute
+  '/api/search': typeof ApiSearchRoute
+  '/api/settings': typeof ApiSettingsRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
+  '/api/admin/keys': typeof ApiAdminKeysRoute
+  '/api/admin/revoke': typeof ApiAdminRevokeRoute
+  '/api/admin/users': typeof ApiAdminUsersRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/redeem': typeof ApiAuthRedeemRoute
+  '/api/auth/validate': typeof ApiAuthValidateRoute
+  '/api/chat/multimodal': typeof ApiChatMultimodalRoute
+  '/api/files/upload': typeof ApiFilesUploadRoute
+  '/api/images/edit': typeof ApiImagesEditRoute
+  '/api/images/generate': typeof ApiImagesGenerateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/api/chat': typeof ApiChatRoute
+  '/api/chat': typeof ApiChatRouteWithChildren
+  '/api/conversations': typeof ApiConversationsRoute
+  '/api/media': typeof ApiMediaRoute
+  '/api/search': typeof ApiSearchRoute
+  '/api/settings': typeof ApiSettingsRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
+  '/api/admin/keys': typeof ApiAdminKeysRoute
+  '/api/admin/revoke': typeof ApiAdminRevokeRoute
+  '/api/admin/users': typeof ApiAdminUsersRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/redeem': typeof ApiAuthRedeemRoute
+  '/api/auth/validate': typeof ApiAuthValidateRoute
+  '/api/chat/multimodal': typeof ApiChatMultimodalRoute
+  '/api/files/upload': typeof ApiFilesUploadRoute
+  '/api/images/edit': typeof ApiImagesEditRoute
+  '/api/images/generate': typeof ApiImagesGenerateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/api/chat': typeof ApiChatRoute
+  '/api/chat': typeof ApiChatRouteWithChildren
+  '/api/conversations': typeof ApiConversationsRoute
+  '/api/media': typeof ApiMediaRoute
+  '/api/search': typeof ApiSearchRoute
+  '/api/settings': typeof ApiSettingsRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
+  '/api/admin/keys': typeof ApiAdminKeysRoute
+  '/api/admin/revoke': typeof ApiAdminRevokeRoute
+  '/api/admin/users': typeof ApiAdminUsersRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/redeem': typeof ApiAuthRedeemRoute
+  '/api/auth/validate': typeof ApiAuthValidateRoute
+  '/api/chat/multimodal': typeof ApiChatMultimodalRoute
+  '/api/files/upload': typeof ApiFilesUploadRoute
+  '/api/images/edit': typeof ApiImagesEditRoute
+  '/api/images/generate': typeof ApiImagesGenerateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/chat'
+  fullPaths:
+    | '/'
+    | '/api/chat'
+    | '/api/conversations'
+    | '/api/media'
+    | '/api/search'
+    | '/api/settings'
+    | '/api/transcribe'
+    | '/api/admin/keys'
+    | '/api/admin/revoke'
+    | '/api/admin/users'
+    | '/api/auth/logout'
+    | '/api/auth/redeem'
+    | '/api/auth/validate'
+    | '/api/chat/multimodal'
+    | '/api/files/upload'
+    | '/api/images/edit'
+    | '/api/images/generate'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/chat'
-  id: '__root__' | '/' | '/api/chat'
+  to:
+    | '/'
+    | '/api/chat'
+    | '/api/conversations'
+    | '/api/media'
+    | '/api/search'
+    | '/api/settings'
+    | '/api/transcribe'
+    | '/api/admin/keys'
+    | '/api/admin/revoke'
+    | '/api/admin/users'
+    | '/api/auth/logout'
+    | '/api/auth/redeem'
+    | '/api/auth/validate'
+    | '/api/chat/multimodal'
+    | '/api/files/upload'
+    | '/api/images/edit'
+    | '/api/images/generate'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/chat'
+    | '/api/conversations'
+    | '/api/media'
+    | '/api/search'
+    | '/api/settings'
+    | '/api/transcribe'
+    | '/api/admin/keys'
+    | '/api/admin/revoke'
+    | '/api/admin/users'
+    | '/api/auth/logout'
+    | '/api/auth/redeem'
+    | '/api/auth/validate'
+    | '/api/chat/multimodal'
+    | '/api/files/upload'
+    | '/api/images/edit'
+    | '/api/images/generate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ApiChatRoute: typeof ApiChatRoute
+  ApiChatRoute: typeof ApiChatRouteWithChildren
+  ApiConversationsRoute: typeof ApiConversationsRoute
+  ApiMediaRoute: typeof ApiMediaRoute
+  ApiSearchRoute: typeof ApiSearchRoute
+  ApiSettingsRoute: typeof ApiSettingsRoute
+  ApiTranscribeRoute: typeof ApiTranscribeRoute
+  ApiAdminKeysRoute: typeof ApiAdminKeysRoute
+  ApiAdminRevokeRoute: typeof ApiAdminRevokeRoute
+  ApiAdminUsersRoute: typeof ApiAdminUsersRoute
+  ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
+  ApiAuthRedeemRoute: typeof ApiAuthRedeemRoute
+  ApiAuthValidateRoute: typeof ApiAuthValidateRoute
+  ApiFilesUploadRoute: typeof ApiFilesUploadRoute
+  ApiImagesEditRoute: typeof ApiImagesEditRoute
+  ApiImagesGenerateRoute: typeof ApiImagesGenerateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +266,142 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/conversations': {
+      id: '/api/conversations'
+      path: '/api/conversations'
+      fullPath: '/api/conversations'
+      preLoaderRoute: typeof ApiConversationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/media': {
+      id: '/api/media'
+      path: '/api/media'
+      fullPath: '/api/media'
+      preLoaderRoute: typeof ApiMediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/search': {
+      id: '/api/search'
+      path: '/api/search'
+      fullPath: '/api/search'
+      preLoaderRoute: typeof ApiSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/settings': {
+      id: '/api/settings'
+      path: '/api/settings'
+      fullPath: '/api/settings'
+      preLoaderRoute: typeof ApiSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/transcribe': {
+      id: '/api/transcribe'
+      path: '/api/transcribe'
+      fullPath: '/api/transcribe'
+      preLoaderRoute: typeof ApiTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/keys': {
+      id: '/api/admin/keys'
+      path: '/api/admin/keys'
+      fullPath: '/api/admin/keys'
+      preLoaderRoute: typeof ApiAdminKeysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/revoke': {
+      id: '/api/admin/revoke'
+      path: '/api/admin/revoke'
+      fullPath: '/api/admin/revoke'
+      preLoaderRoute: typeof ApiAdminRevokeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/users': {
+      id: '/api/admin/users'
+      path: '/api/admin/users'
+      fullPath: '/api/admin/users'
+      preLoaderRoute: typeof ApiAdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/logout': {
+      id: '/api/auth/logout'
+      path: '/api/auth/logout'
+      fullPath: '/api/auth/logout'
+      preLoaderRoute: typeof ApiAuthLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/redeem': {
+      id: '/api/auth/redeem'
+      path: '/api/auth/redeem'
+      fullPath: '/api/auth/redeem'
+      preLoaderRoute: typeof ApiAuthRedeemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/validate': {
+      id: '/api/auth/validate'
+      path: '/api/auth/validate'
+      fullPath: '/api/auth/validate'
+      preLoaderRoute: typeof ApiAuthValidateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chat/multimodal': {
+      id: '/api/chat/multimodal'
+      path: '/multimodal'
+      fullPath: '/api/chat/multimodal'
+      preLoaderRoute: typeof ApiChatMultimodalRouteImport
+      parentRoute: typeof ApiChatRoute
+    }
+    '/api/files/upload': {
+      id: '/api/files/upload'
+      path: '/api/files/upload'
+      fullPath: '/api/files/upload'
+      preLoaderRoute: typeof ApiFilesUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/images/edit': {
+      id: '/api/images/edit'
+      path: '/api/images/edit'
+      fullPath: '/api/images/edit'
+      preLoaderRoute: typeof ApiImagesEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/images/generate': {
+      id: '/api/images/generate'
+      path: '/api/images/generate'
+      fullPath: '/api/images/generate'
+      preLoaderRoute: typeof ApiImagesGenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface ApiChatRouteChildren {
+  ApiChatMultimodalRoute: typeof ApiChatMultimodalRoute
+}
+
+const ApiChatRouteChildren: ApiChatRouteChildren = {
+  ApiChatMultimodalRoute: ApiChatMultimodalRoute,
+}
+
+const ApiChatRouteWithChildren =
+  ApiChatRoute._addFileChildren(ApiChatRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ApiChatRoute: ApiChatRoute,
+  ApiChatRoute: ApiChatRouteWithChildren,
+  ApiConversationsRoute: ApiConversationsRoute,
+  ApiMediaRoute: ApiMediaRoute,
+  ApiSearchRoute: ApiSearchRoute,
+  ApiSettingsRoute: ApiSettingsRoute,
+  ApiTranscribeRoute: ApiTranscribeRoute,
+  ApiAdminKeysRoute: ApiAdminKeysRoute,
+  ApiAdminRevokeRoute: ApiAdminRevokeRoute,
+  ApiAdminUsersRoute: ApiAdminUsersRoute,
+  ApiAuthLogoutRoute: ApiAuthLogoutRoute,
+  ApiAuthRedeemRoute: ApiAuthRedeemRoute,
+  ApiAuthValidateRoute: ApiAuthValidateRoute,
+  ApiFilesUploadRoute: ApiFilesUploadRoute,
+  ApiImagesEditRoute: ApiImagesEditRoute,
+  ApiImagesGenerateRoute: ApiImagesGenerateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
