@@ -423,9 +423,9 @@ export class SessionManagerService {
         sessionLatencyTracker.mark("session_ready");
       } else if (normalizedTarget === "VIDEO") {
         this._context = { ...this._context, cameraStatus: "requesting" };
+        let stream: MediaStream | null = null;
         try {
-          const cameraPromise = cameraService.start(settings);
-          const [stream] = await Promise.all([cameraPromise, livePromise]);
+          stream = await cameraService.start(settings);
           if (signal.aborted) {
             cameraService.stop();
             return false;
@@ -450,15 +450,26 @@ export class SessionManagerService {
           };
           this.transitionTo("VIDEO_ACTIVE");
           sessionLatencyTracker.mark("session_ready");
+
+          // Await live assistant in background; if serverless/Vercel WebSocket fails,
+          // do NOT kill the working camera feed
+          livePromise.catch((liveErr) => {
+            console.warn("[SessionManager] Live assistant connection warning in video mode:", liveErr);
+            this.callbacks.onError?.(
+              targetConversationId,
+              "Live voice channel is offline on this server. Camera visual mode is active.",
+            );
+          });
         } catch (camErr) {
           if (signal.aborted) return false;
+          cameraService.stop();
+          this._context = { ...this._context, cameraStatus: "idle" };
           try {
             await livePromise;
           } catch {
-            throw camErr;
+            // ignore
           }
           if (this.liveClient && this._context.connectionStatus === "connected") {
-            cameraService.stop();
             this._context = {
               ...this._context,
               activeInteractionType: "voice",
@@ -477,9 +488,9 @@ export class SessionManagerService {
         }
       } else if (normalizedTarget === "SCREEN_SHARE") {
         this._context = { ...this._context, screenCaptureStatus: "requesting" };
+        let stream: MediaStream | null = null;
         try {
-          const screenPromise = screenShareService.start(settings);
-          const [stream] = await Promise.all([screenPromise, livePromise]);
+          stream = await screenShareService.start(settings);
           if (signal.aborted) {
             screenShareService.stop();
             return false;
@@ -487,6 +498,15 @@ export class SessionManagerService {
           if (!stream) {
             throw new Error("Screen sharing cancelled or failed");
           }
+
+          // Await live assistant in background without killing screen sharing if WebSocket fails
+          livePromise.catch((liveErr) => {
+            console.warn("[SessionManager] Live assistant connection warning in screen share mode:", liveErr);
+            this.callbacks.onError?.(
+              targetConversationId,
+              "Live voice channel is offline on this server. Screen visual mode is active.",
+            );
+          });
 
           const targetVideoEl =
             options?.videoElement || (this.videoElementGetter ? this.videoElementGetter() : null);

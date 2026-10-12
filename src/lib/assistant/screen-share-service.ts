@@ -26,6 +26,11 @@ export class ScreenShareService {
 
   public async start(settings: Settings): Promise<MediaStream> {
     this.stop();
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getDisplayMedia) {
+      throw new Error(
+        "Screen sharing is not supported by mobile web browsers. Please use a desktop browser or the Android application.",
+      );
+    }
     const isHigh = settings.screenQuality === "high";
     sessionLatencyTracker.mark("permission_requested");
     const stream = await navigator.mediaDevices.getDisplayMedia({

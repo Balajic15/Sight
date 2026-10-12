@@ -528,7 +528,9 @@ function Assistant() {
         toast("Interrupted");
       },
       onError: (_conversationId, err) => {
-        if (isCameraInitializing || isCameraPanelOpen) {
+        const stream = realtimeSessionService.getActiveStream();
+        const hasActiveVideo = Boolean(stream && stream.getVideoTracks().some((t) => t.readyState === "live"));
+        if (!hasActiveVideo && (isCameraInitializing || isCameraPanelOpen)) {
           setCameraError(err);
           setIsCameraInitializing(false);
         }
@@ -569,7 +571,9 @@ function Assistant() {
     ) {
       setIsCameraPanelOpen(false);
     } else if (sessionContext.state === "ERROR") {
-      if (isCameraPanelOpen) {
+      const stream = realtimeSessionService.getActiveStream();
+      const hasActiveVideo = Boolean(stream && stream.getVideoTracks().some((t) => t.readyState === "live"));
+      if (!hasActiveVideo && isCameraPanelOpen) {
         setIsCameraInitializing(false);
         setCameraError(sessionContext.errorMessage || "Camera session error");
       }
