@@ -5,7 +5,7 @@ import { nvidiaMultimodalService, type MediaItem } from "@/server/nvidia-multimo
 import { aiRouter } from "@/server/ai/router";
 import type { AIRequestContext } from "@/server/ai/contracts";
 import { attachmentContextService } from "@/lib/assistant/attachment-context";
-import { requireSessionAuth } from "@/server/auth";
+import { requireSessionAuth, corsJson, corsOptions } from "@/server/auth";
 
 const AttachmentSchema = z.object({
   id: z.string(),
@@ -37,6 +37,7 @@ const SYSTEM = `You are a helpful, clear, and concise AI chat assistant.
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
+      OPTIONS: async () => corsOptions(),
       POST: async ({ request }) => {
         const auth = await requireSessionAuth(request);
         if (auth instanceof Response) return auth;
@@ -45,7 +46,7 @@ export const Route = createFileRoute("/api/chat")({
         try {
           body = BodySchema.parse(await request.json());
         } catch {
-          return Response.json({ error: "Invalid request." }, { status: 400 });
+          return corsJson({ error: "Invalid request." }, { status: 400 });
         }
 
         const validMessages = body.messages.filter(
@@ -250,7 +251,7 @@ export const Route = createFileRoute("/api/chat")({
               : upstream.status === 403 || upstream.status === 401
                 ? "The assistant's access key was rejected."
                 : "Something went wrong. Please try again.";
-          return Response.json({ error: msg }, { status: upstream.status });
+          return corsJson({ error: msg }, { status: upstream.status });
         }
 
         // Re-emit only plain text chunks immediately so no provider details reach the client.
@@ -340,6 +341,9 @@ export const Route = createFileRoute("/api/chat")({
             "content-type": "text/plain; charset=utf-8",
             "cache-control": "no-cache, no-transform, no-store",
             "x-content-type-options": "nosniff",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, x-session-token",
           },
         });
       },

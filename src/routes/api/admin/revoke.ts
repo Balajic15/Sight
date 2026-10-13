@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { requireAdminAuth } from "@/server/auth";
+import { requireAdminAuth, corsJson, corsOptions } from "@/server/auth";
 import { revokeInvitationKeyDb } from "@/server/db";
 
 const RevokeSchema = z.object({
@@ -10,6 +10,7 @@ const RevokeSchema = z.object({
 export const Route = createFileRoute("/api/admin/revoke")({
   server: {
     handlers: {
+      OPTIONS: async () => corsOptions(),
       POST: async ({ request }) => {
         const auth = await requireAdminAuth(request);
         if (auth instanceof Response) return auth;
@@ -20,19 +21,19 @@ export const Route = createFileRoute("/api/admin/revoke")({
 
           const success = await revokeInvitationKeyDb(parsed.keyId);
           if (!success) {
-            return Response.json(
+            return corsJson(
               { success: false, error: "Key not found or could not be revoked." },
               { status: 404 },
             );
           }
 
-          return Response.json({ success: true, revokedKeyId: parsed.keyId });
+          return corsJson({ success: true, revokedKeyId: parsed.keyId });
         } catch (err) {
           const message =
             err instanceof z.ZodError
               ? err.errors[0]?.message || "Invalid payload."
               : "Failed to revoke invitation key.";
-          return Response.json({ success: false, error: message }, { status: 400 });
+          return corsJson({ success: false, error: message }, { status: 400 });
         }
       },
     },

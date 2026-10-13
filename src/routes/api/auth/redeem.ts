@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { redeemInvitationKeyAtomic, validateSessionTokenDb } from "@/server/db";
-import { extractBearerToken } from "@/server/auth";
+import { extractBearerToken, corsJson, corsOptions } from "@/server/auth";
 
 const RedeemSchema = z.object({
   key: z.string().min(1, "Invitation key is required"),
@@ -31,6 +31,7 @@ function recordFailedAttempt(ip: string) {
 export const Route = createFileRoute("/api/auth/redeem")({
   server: {
     handlers: {
+      OPTIONS: async () => corsOptions(),
       POST: async ({ request }) => {
         const ip =
           request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
@@ -38,7 +39,7 @@ export const Route = createFileRoute("/api/auth/redeem")({
           "client";
 
         if (!checkRateLimit(ip)) {
-          return Response.json(
+          return corsJson(
             {
               success: false,
               error: "Too many failed redemption attempts. Please wait 5 minutes before trying again.",
@@ -52,7 +53,7 @@ export const Route = createFileRoute("/api/auth/redeem")({
         if (existingToken) {
           const existingSession = await validateSessionTokenDb(existingToken);
           if (existingSession.valid && existingSession.session) {
-            return Response.json(
+            return corsJson(
               {
                 success: false,
                 code: "ACTIVE_SESSION_EXISTS",
@@ -71,7 +72,7 @@ export const Route = createFileRoute("/api/auth/redeem")({
           const result = await redeemInvitationKeyAtomic(parsed.key);
           if (!result.success) {
             recordFailedAttempt(ip);
-            return Response.json(
+            return corsJson(
               {
                 success: false,
                 error: result.error || "Failed to redeem invitation key.",
@@ -82,7 +83,7 @@ export const Route = createFileRoute("/api/auth/redeem")({
 
           failedAttemptsMap.delete(ip);
 
-          return Response.json({
+          return corsJson({
             success: true,
             sessionToken: result.sessionToken,
             userId: result.userId,
@@ -96,7 +97,7 @@ export const Route = createFileRoute("/api/auth/redeem")({
             err instanceof z.ZodError
               ? err.errors[0]?.message || "Invalid request body."
               : "Failed to redeem invitation key.";
-          return Response.json({ success: false, error: message }, { status: 400 });
+          return corsJson({ success: false, error: message }, { status: 400 });
         }
       },
     },

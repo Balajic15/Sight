@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { imageGenerationService } from "@/server/image-generation";
-import { requireSessionAuth } from "@/server/auth";
+import { requireSessionAuth, corsJson, corsOptions } from "@/server/auth";
 
 const GenerateImageSchema = z.object({
   operationId: z.string().min(1),
@@ -21,6 +21,7 @@ const GenerateImageSchema = z.object({
 export const Route = createFileRoute("/api/images/generate")({
   server: {
     handlers: {
+      OPTIONS: async () => corsOptions(),
       POST: async ({ request }) => {
         const auth = await requireSessionAuth(request);
         if (auth instanceof Response) return auth;
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/api/images/generate")({
         try {
           body = GenerateImageSchema.parse(await request.json());
         } catch (err) {
-          return Response.json(
+          return corsJson(
             {
               operationId: "unknown",
               conversationId: "unknown",
@@ -49,9 +50,7 @@ export const Route = createFileRoute("/api/images/generate")({
         body.userId = auth.session.userId;
 
         const result = await imageGenerationService.generateImage(body);
-        const status =
-          result.status === "succeeded" ? 200 : result.errorCode === "UNAUTHORIZED" ? 401 : 500;
-        return Response.json(result, { status: status === 200 ? 200 : 200 }); // Return 200 with typed failure status per contract
+        return corsJson(result, { status: 200 }); // Return 200 with typed failure status per contract
       },
     },
   },

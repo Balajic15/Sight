@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiConversationsRouteImport } from './routes/api/conversations'
+import { Route as ApiLiveTokenRouteImport } from './routes/api/live-token'
 import { Route as ApiMediaRouteImport } from './routes/api/media'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
 import { Route as ApiSettingsRouteImport } from './routes/api/settings'
@@ -40,6 +41,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
 const ApiConversationsRoute = ApiConversationsRouteImport.update({
   id: '/api/conversations',
   path: '/api/conversations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLiveTokenRoute = ApiLiveTokenRouteImport.update({
+  id: '/api/live-token',
+  path: '/api/live-token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMediaRoute = ApiMediaRouteImport.update({
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/chat': typeof ApiChatRouteWithChildren
   '/api/conversations': typeof ApiConversationsRoute
+  '/api/live-token': typeof ApiLiveTokenRoute
   '/api/media': typeof ApiMediaRoute
   '/api/search': typeof ApiSearchRoute
   '/api/settings': typeof ApiSettingsRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/chat': typeof ApiChatRouteWithChildren
   '/api/conversations': typeof ApiConversationsRoute
+  '/api/live-token': typeof ApiLiveTokenRoute
   '/api/media': typeof ApiMediaRoute
   '/api/search': typeof ApiSearchRoute
   '/api/settings': typeof ApiSettingsRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/api/chat': typeof ApiChatRouteWithChildren
   '/api/conversations': typeof ApiConversationsRoute
+  '/api/live-token': typeof ApiLiveTokenRoute
   '/api/media': typeof ApiMediaRoute
   '/api/search': typeof ApiSearchRoute
   '/api/settings': typeof ApiSettingsRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api/chat'
     | '/api/conversations'
+    | '/api/live-token'
     | '/api/media'
     | '/api/search'
     | '/api/settings'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api/chat'
     | '/api/conversations'
+    | '/api/live-token'
     | '/api/media'
     | '/api/search'
     | '/api/settings'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api/chat'
     | '/api/conversations'
+    | '/api/live-token'
     | '/api/media'
     | '/api/search'
     | '/api/settings'
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiChatRoute: typeof ApiChatRouteWithChildren
   ApiConversationsRoute: typeof ApiConversationsRoute
+  ApiLiveTokenRoute: typeof ApiLiveTokenRoute
   ApiMediaRoute: typeof ApiMediaRoute
   ApiSearchRoute: typeof ApiSearchRoute
   ApiSettingsRoute: typeof ApiSettingsRoute
@@ -271,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/api/conversations'
       fullPath: '/api/conversations'
       preLoaderRoute: typeof ApiConversationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/live-token': {
+      id: '/api/live-token'
+      path: '/api/live-token'
+      fullPath: '/api/live-token'
+      preLoaderRoute: typeof ApiLiveTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/media': {
@@ -389,6 +409,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiChatRoute: ApiChatRouteWithChildren,
   ApiConversationsRoute: ApiConversationsRoute,
+  ApiLiveTokenRoute: ApiLiveTokenRoute,
   ApiMediaRoute: ApiMediaRoute,
   ApiSearchRoute: ApiSearchRoute,
   ApiSettingsRoute: ApiSettingsRoute,

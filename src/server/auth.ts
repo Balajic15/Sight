@@ -2,6 +2,27 @@ import { validateSessionTokenDb, getMasterAdminKey } from "./db";
 import fs from "node:fs";
 import path from "node:path";
 
+export const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-session-token, x-admin-secret",
+};
+
+export function corsJson(data: unknown, init?: ResponseInit): Response {
+  const headers = new Headers(init?.headers);
+  for (const [k, v] of Object.entries(CORS_HEADERS)) {
+    headers.set(k, v);
+  }
+  return Response.json(data, { ...init, headers });
+}
+
+export function corsOptions(): Response {
+  return new Response(null, {
+    status: 204,
+    headers: CORS_HEADERS,
+  });
+}
+
 function getAdminSecret(): string {
   if (process.env["ADMIN_SECRET"]) return process.env["ADMIN_SECRET"];
   try {
@@ -60,7 +81,7 @@ export async function requireSessionAuth(
 ): Promise<{ session: AuthenticatedSession } | Response> {
   const token = extractBearerToken(request);
   if (!token) {
-    return Response.json(
+    return corsJson(
       {
         error: "Authentication required. Please enter a valid invitation key.",
         code: "UNAUTHENTICATED",
@@ -72,7 +93,7 @@ export async function requireSessionAuth(
   const validation = await validateSessionTokenDb(token);
   if (!validation.valid || !validation.session) {
     const isExpired = validation.reason === "expired";
-    return Response.json(
+    return corsJson(
       {
         error: isExpired
           ? "Your access has expired. Enter a new Invitation Key to continue."
@@ -108,7 +129,7 @@ export async function requireAdminAuth(request: Request): Promise<boolean | Resp
     }
   }
 
-  return Response.json(
+  return corsJson(
     {
       error: "Unauthorized. Administrator authorization required.",
       code: "UNAUTHORIZED_ADMIN",

@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { mediaStorageService } from "@/server/media-storage";
 import { fileProcessingService } from "@/server/file-processing";
-import { requireSessionAuth } from "@/server/auth";
+import { requireSessionAuth, corsJson, corsOptions } from "@/server/auth";
 
 export const Route = createFileRoute("/api/files/upload")({
   server: {
     handlers: {
+      OPTIONS: async () => corsOptions(),
       POST: async ({ request }) => {
         const auth = await requireSessionAuth(request);
         if (auth instanceof Response) return auth;
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/api/files/upload")({
             const formData = await request.formData();
             const file = formData.get("file");
             if (!file || !(file instanceof Blob)) {
-              return Response.json({ error: "No file provided in form data." }, { status: 400 });
+              return corsJson({ error: "No file provided in form data." }, { status: 400 });
             }
             conversationId = (formData.get("conversationId") as string) || "default";
             fileName = file.name || "uploaded-file";
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/api/files/upload")({
           } else {
             const body = await request.json();
             if (!body.data && !body.file) {
-              return Response.json({ error: "Missing file data." }, { status: 400 });
+              return corsJson({ error: "Missing file data." }, { status: 400 });
             }
             let rawBase64 = (body.data || body.file) as string;
             if (rawBase64.includes(",")) {
@@ -45,7 +46,7 @@ export const Route = createFileRoute("/api/files/upload")({
 
           // Size limit: 50MB (supports images, documents, and video clips)
           if (buffer.length > 50 * 1024 * 1024) {
-            return Response.json(
+            return corsJson(
               { error: "File exceeds 50MB limit. Please upload a smaller file." },
               { status: 413 },
             );
@@ -66,14 +67,14 @@ export const Route = createFileRoute("/api/files/upload")({
             extractedText: processed.extractedText,
           });
 
-          return Response.json({
+          return corsJson({
             success: true,
             attachment,
             fileType: processed.fileType,
           });
         } catch (err) {
           console.error("File upload error:", err);
-          return Response.json(
+          return corsJson(
             { error: (err as Error)?.message || "Failed to upload and process file." },
             { status: 500 },
           );

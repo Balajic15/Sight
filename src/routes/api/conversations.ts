@@ -7,7 +7,7 @@ import {
   clearAllConversationsFromDb,
 } from "@/server/db";
 import type { ChatAttachment } from "@/lib/assistant/store";
-import { requireSessionAuth } from "@/server/auth";
+import { requireSessionAuth, corsJson, corsOptions } from "@/server/auth";
 
 const ImageVersionNodeSchema = z.object({
   id: z.string(),
@@ -65,16 +65,17 @@ const ConversationSchema = z.object({
 export const Route = createFileRoute("/api/conversations")({
   server: {
     handlers: {
+      OPTIONS: async () => corsOptions(),
       GET: async ({ request }) => {
         const auth = await requireSessionAuth(request);
         if (auth instanceof Response) return auth;
 
         try {
           const list = await getConversationsFromDb(auth.session.userId, auth.session.isAdmin);
-          return Response.json(list);
+          return corsJson(list);
         } catch (error) {
           console.error("Failed to load conversations from DB:", error);
-          return Response.json({ error: "Failed to load conversations" }, { status: 500 });
+          return corsJson({ error: "Failed to load conversations" }, { status: 500 });
         }
       },
       POST: async ({ request }) => {
@@ -125,14 +126,14 @@ export const Route = createFileRoute("/api/conversations")({
             auth.session.userId,
             auth.session.isAdmin,
           );
-          return Response.json({ success: true, id: parsed.id });
+          return corsJson({ success: true, id: parsed.id });
         } catch (error) {
           const msg = (error as Error)?.message || "";
           if (msg.includes("Forbidden")) {
-            return Response.json({ error: msg }, { status: 403 });
+            return corsJson({ error: msg }, { status: 403 });
           }
           console.error("Failed to save conversation to DB:", error);
-          return Response.json({ error: "Failed to save conversation" }, { status: 400 });
+          return corsJson({ error: "Failed to save conversation" }, { status: 400 });
         }
       },
       DELETE: async ({ request }) => {
@@ -144,23 +145,23 @@ export const Route = createFileRoute("/api/conversations")({
           const all = url.searchParams.get("all");
           if (all === "true") {
             await clearAllConversationsFromDb(auth.session.userId);
-            return Response.json({ success: true, clearedAll: true });
+            return corsJson({ success: true, clearedAll: true });
           }
 
           const id = url.searchParams.get("id");
           if (!id) {
-            return Response.json({ error: "Missing conversation id" }, { status: 400 });
+            return corsJson({ error: "Missing conversation id" }, { status: 400 });
           }
 
           await deleteConversationFromDb(id, auth.session.userId, auth.session.isAdmin);
-          return Response.json({ success: true, deleted: id });
+          return corsJson({ success: true, deleted: id });
         } catch (error) {
           const msg = (error as Error)?.message || "";
           if (msg.includes("Forbidden")) {
-            return Response.json({ error: msg }, { status: 403 });
+            return corsJson({ error: msg }, { status: 403 });
           }
           console.error("Failed to delete conversation from DB:", error);
-          return Response.json({ error: "Failed to delete conversation" }, { status: 500 });
+          return corsJson({ error: "Failed to delete conversation" }, { status: 500 });
         }
       },
     },

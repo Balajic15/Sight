@@ -3,7 +3,7 @@ import { z } from "zod";
 import { imageOrchestratorService } from "@/server/ai/image-orchestrator";
 import { multimodalIntentService } from "@/server/ai/multimodal-intent-service";
 import { findCandidateImagesByConversation } from "@/server/db";
-import { requireSessionAuth } from "@/server/auth";
+import { requireSessionAuth, corsJson, corsOptions } from "@/server/auth";
 
 const MultimodalChatSchema = z.object({
   conversationId: z.string().min(1),
@@ -17,6 +17,7 @@ const MultimodalChatSchema = z.object({
 export const Route = createFileRoute("/api/chat/multimodal")({
   server: {
     handlers: {
+      OPTIONS: async () => corsOptions(),
       POST: async ({ request }) => {
         const auth = await requireSessionAuth(request);
         if (auth instanceof Response) return auth;
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/api/chat/multimodal")({
         try {
           body = MultimodalChatSchema.parse(await request.json());
         } catch {
-          return Response.json(
+          return corsJson(
             { status: "error", message: "Invalid request payload." },
             { status: 400 },
           );
@@ -63,9 +64,9 @@ export const Route = createFileRoute("/api/chat/multimodal")({
             nvidiaApiKey: body.nvidiaApiKey,
           });
 
-          return Response.json(result);
+          return corsJson(result);
         } catch (err: any) {
-          return Response.json(
+          return corsJson(
             {
               status: "error",
               message: err?.message || "Failed to process multimodal request.",

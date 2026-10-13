@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { requireAdminAuth } from "@/server/auth";
+import { requireAdminAuth, corsJson, corsOptions } from "@/server/auth";
 import { listUsersDb } from "@/server/db";
 
 export const Route = createFileRoute("/api/admin/users")({
   server: {
     handlers: {
+      OPTIONS: async () => corsOptions(),
       GET: async ({ request }) => {
         const auth = await requireAdminAuth(request);
         if (auth instanceof Response) return auth;
@@ -13,10 +14,10 @@ export const Route = createFileRoute("/api/admin/users")({
           const url = new URL(request.url);
           const q = url.searchParams.get("q") || undefined;
           const users = await listUsersDb(q);
-          return Response.json({ success: true, users });
+          return corsJson({ success: true, users });
         } catch (err) {
           console.error("Failed to list users:", err);
-          return Response.json(
+          return corsJson(
             { success: false, error: "Failed to list users." },
             { status: 500 },
           );

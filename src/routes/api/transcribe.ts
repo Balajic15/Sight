@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { requireSessionAuth } from "@/server/auth";
+import { requireSessionAuth, corsJson, corsOptions } from "@/server/auth";
 
 const TranscribeSchema = z.object({
   audio: z.string().min(1), // base64 encoded audio string
@@ -12,6 +12,7 @@ const TranscribeSchema = z.object({
 export const Route = createFileRoute("/api/transcribe")({
   server: {
     handlers: {
+      OPTIONS: async () => corsOptions(),
       POST: async ({ request }) => {
         const auth = await requireSessionAuth(request);
         if (auth instanceof Response) return auth;
@@ -20,14 +21,14 @@ export const Route = createFileRoute("/api/transcribe")({
         try {
           body = TranscribeSchema.parse(await request.json());
         } catch {
-          return Response.json({ error: "Invalid request payload." }, { status: 400 });
+          return corsJson({ error: "Invalid request payload." }, { status: 400 });
         }
 
         const key =
           (body.apiKey && !body.apiKey.startsWith("nvapi-") ? body.apiKey.trim() : undefined) ||
           process.env["GOOGLE_API_KEY"];
         if (!key) {
-          return Response.json(
+          return corsJson(
             { error: "Google API key is not configured. Set your API key in Settings." },
             { status: 500 },
           );
@@ -76,7 +77,7 @@ export const Route = createFileRoute("/api/transcribe")({
 
           if (!resp.ok) {
             const err = await resp.json().catch(() => ({}));
-            return Response.json(
+            return corsJson(
               { error: err.error?.message || "Transcription request failed." },
               { status: resp.status },
             );
@@ -85,9 +86,9 @@ export const Route = createFileRoute("/api/transcribe")({
           const data = await resp.json();
           const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
-          return Response.json({ text });
+          return corsJson({ text });
         } catch (err) {
-          return Response.json(
+          return corsJson(
             { error: (err as Error)?.message || "Failed to contact transcription service." },
             { status: 500 },
           );

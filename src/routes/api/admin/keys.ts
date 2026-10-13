@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { requireAdminAuth } from "@/server/auth";
+import { requireAdminAuth, corsJson, corsOptions } from "@/server/auth";
 import { createInvitationKeysDb, listInvitationKeysDb } from "@/server/db";
 
 const CreateKeysSchema = z.object({
@@ -15,16 +15,17 @@ const CreateKeysSchema = z.object({
 export const Route = createFileRoute("/api/admin/keys")({
   server: {
     handlers: {
+      OPTIONS: async () => corsOptions(),
       GET: async ({ request }) => {
         const auth = await requireAdminAuth(request);
         if (auth instanceof Response) return auth;
 
         try {
           const keys = await listInvitationKeysDb();
-          return Response.json({ success: true, keys });
+          return corsJson({ success: true, keys });
         } catch (err) {
           console.error("Failed to list keys:", err);
-          return Response.json({ success: false, error: "Failed to list invitation keys." }, { status: 500 });
+          return corsJson({ success: false, error: "Failed to list invitation keys." }, { status: 500 });
         }
       },
       POST: async ({ request }) => {
@@ -43,13 +44,13 @@ export const Route = createFileRoute("/api/admin/keys")({
             parsed.assignedUserId,
             parsed.purpose,
           );
-          return Response.json({ success: true, keys });
+          return corsJson({ success: true, keys });
         } catch (err) {
           const message =
             err instanceof z.ZodError
               ? err.errors[0]?.message || "Invalid payload."
               : (err as Error)?.message || "Failed to generate invitation keys.";
-          return Response.json({ success: false, error: message }, { status: 400 });
+          return corsJson({ success: false, error: message }, { status: 400 });
         }
       },
     },

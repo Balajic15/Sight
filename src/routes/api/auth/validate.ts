@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { extractBearerToken } from "@/server/auth";
+import { extractBearerToken, corsJson, corsOptions } from "@/server/auth";
 import { validateSessionTokenDb } from "@/server/db";
 
 export const Route = createFileRoute("/api/auth/validate")({
   server: {
     handlers: {
+      OPTIONS: async () => corsOptions(),
       GET: async ({ request }) => {
         const token = extractBearerToken(request);
         if (!token) {
-          return Response.json(
+          return corsJson(
             {
               valid: false,
               reason: "missing",
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/api/auth/validate")({
         const validation = await validateSessionTokenDb(token);
         if (!validation.valid) {
           const isExpired = validation.reason === "expired";
-          return Response.json(
+          return corsJson(
             {
               valid: false,
               reason: validation.reason,
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/api/auth/validate")({
           );
         }
 
-        return Response.json({
+        return corsJson({
           valid: true,
           userId: validation.session?.userId || null,
           expiresAt: validation.session?.expiresAt || null,

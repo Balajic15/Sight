@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { getSettingsFromDb, saveSettingsToDb } from "@/server/db";
-import { requireSessionAuth } from "@/server/auth";
+import { requireSessionAuth, corsJson, corsOptions } from "@/server/auth";
 
 const SettingsSchema = z.object({
   chatModel: z.string().optional(),
@@ -19,16 +19,17 @@ const SettingsSchema = z.object({
 export const Route = createFileRoute("/api/settings")({
   server: {
     handlers: {
+      OPTIONS: async () => corsOptions(),
       GET: async ({ request }) => {
         const auth = await requireSessionAuth(request);
         if (auth instanceof Response) return auth;
 
         try {
           const settings = await getSettingsFromDb(auth.session.userId);
-          return Response.json(settings || {});
+          return corsJson(settings || {});
         } catch (error) {
           console.error("Failed to load settings from DB:", error);
-          return Response.json({ error: "Failed to load settings" }, { status: 500 });
+          return corsJson({ error: "Failed to load settings" }, { status: 500 });
         }
       },
       POST: async ({ request }) => {
@@ -51,10 +52,10 @@ export const Route = createFileRoute("/api/settings")({
             update["cameraResolution"] = parsed.cameraResolution;
           if (parsed.screenQuality !== undefined) update["screenQuality"] = parsed.screenQuality;
           await saveSettingsToDb(update, auth.session.userId);
-          return Response.json({ success: true });
+          return corsJson({ success: true });
         } catch (error) {
           console.error("Failed to save settings to DB:", error);
-          return Response.json({ error: "Failed to save settings" }, { status: 400 });
+          return corsJson({ error: "Failed to save settings" }, { status: 400 });
         }
       },
     },
