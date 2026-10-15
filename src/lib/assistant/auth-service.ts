@@ -1,6 +1,16 @@
-import { Capacitor } from "@capacitor/core";
-
 export const DEFAULT_BACKEND_URL = "https://sight-beta.vercel.app";
+
+function isNativePlatform(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+  if (typeof cap?.isNativePlatform === "function") {
+    return cap.isNativePlatform();
+  }
+  const proto = window.location?.protocol;
+  return proto === "capacitor:" || proto === "file:";
+}
 
 const STORAGE_KEYS = {
   token: "sight_auth_token",
@@ -45,7 +55,7 @@ export function resolveApiUrl(path: string): string {
 
   const cleanPath = `/${input.replace(/^\/+/, "")}`;
 
-  if (Capacitor.isNativePlatform()) {
+  if (isNativePlatform()) {
     return `${DEFAULT_BACKEND_URL.replace(/\/+$/, "")}${cleanPath}`;
   }
 
