@@ -10,14 +10,10 @@ export interface FileProcessingResult {
 
 export class FileProcessingService {
   private static instance: FileProcessingService;
-
-  private constructor() {}
+  private readonly MAX_TEXT_LENGTH = 60_000;
 
   public static getInstance(): FileProcessingService {
-    if (!FileProcessingService.instance) {
-      FileProcessingService.instance = new FileProcessingService();
-    }
-    return FileProcessingService.instance;
+    return (this.instance ??= new FileProcessingService());
   }
 
   public async processFile(
@@ -39,72 +35,31 @@ export class FileProcessingService {
       };
     }
 
-    // 2. Videos (MP4, WebM, MOV, MKV)
-    if (mimeType.startsWith("video/") || ["mp4", "webm", "mov", "mkv", "avi"].includes(ext)) {
-      const finalMime = mimeType.startsWith("video/")
-        ? mimeType
-        : ext === "webm"
-          ? "video/webm"
-          : ext === "mov"
-            ? "video/quicktime"
-            : "video/mp4";
-
+    // 2. Videos
+    if (
+      mimeType.startsWith("video/") ||
+      ["mp4", "webm", "mov", "mkv", "avi"].includes(ext)
+    ) {
       return {
         success: true,
         fileType: "video",
-        mimeType: finalMime,
+        mimeType: mimeType || "video/mp4",
       };
     }
 
-    // 2. Plain text & Code files
-    const isTextMime =
-      mimeType.startsWith("text/") ||
-      mimeType === "application/json" ||
-      mimeType === "application/javascript" ||
-      mimeType === "application/typescript" ||
-      mimeType === "application/xml";
-
+    // 3. Plain Text & Source Code
     const textExtensions = [
-      "txt",
-      "md",
-      "csv",
-      "tsv",
-      "json",
-      "js",
-      "ts",
-      "tsx",
-      "jsx",
-      "html",
-      "css",
-      "py",
-      "java",
-      "c",
-      "cpp",
-      "h",
-      "hpp",
-      "cs",
-      "go",
-      "rs",
-      "rb",
-      "php",
-      "sh",
-      "bash",
-      "sql",
-      "yaml",
-      "yml",
-      "xml",
-      "env",
-      "toml",
-      "ini",
-      "log",
+      "txt", "md", "csv", "tsv", "json", "js", "ts", "tsx", "jsx", "html",
+      "css", "py", "java", "c", "cpp", "go", "rs", "yaml", "yml", "xml", "sql",
     ];
 
-    if (isTextMime || textExtensions.includes(ext)) {
+    if (mimeType.startsWith("text/") || textExtensions.includes(ext)) {
       try {
         let text = buffer.toString("utf-8");
-        // Cap text extraction at 50,000 characters to prevent prompt overflow
-        if (text.length > 50000) {
-          text = text.slice(0, 50000) + "\n\n[... Remaining content truncated for performance ...]";
+        if (text.length > this.MAX_TEXT_LENGTH) {
+          text =
+            text.slice(0, this.MAX_TEXT_LENGTH) +
+            "\n\n[... Truncated for performance ...]";
         }
         return {
           success: true,
@@ -112,134 +67,139 @@ export class FileProcessingService {
           mimeType: mimeType || "text/plain",
           extractedText: text,
         };
-      } catch (err) {
+      } catch {
         return {
           success: false,
           fileType: "text",
-          mimeType: mimeType || "text/plain",
-          error: "Failed to read text encoding.",
+          mimeType,
+          error: "Failed to decode UTF-8 text.",
         };
       }
     }
 
-    // 3. PDF documents
-    if (mimeType === "application/pdf" || ext === "pdf") {
+    // 4. Microsoft Office Documents (DOCX / PPTX / XLSX)
+    if (["docx", "pptx", "xlsx"].includes(ext)) {
       try {
-        const pdfText = this.extractPdfText(buffer);
-        if (pdfText && pdfText.trim().length > 0) {
-          return {
-            success: true,
-            fileType: "pdf",
-            mimeType: "application/pdf",
-            extractedText:
-              pdfText.length > 50000
-                ? pdfText.slice(0, 50000) + "\n\n[... PDF content truncated ...]"
-                : pdfText,
-          };
-        }
-        return {
-          success: true,
-          fileType: "pdf",
-          mimeType: "application/pdf",
-          extractedText: `[PDF document: ${fileName} (${(buffer.length / 1024).toFixed(1)} KB) - Structured vector document loaded]`,
-        };
-      } catch {
-        return {
-          success: false,
-          fileType: "pdf",
-          mimeType: "application/pdf",
-          error: "Failed to parse PDF document content.",
-        };
-      }
-    }
-
-    // 4. Office documents (DOCX, XLSX)
-    if (["docx", "xlsx", "pptx"].includes(ext)) {
-      try {
-        const officeText = this.extractOfficeText(buffer, ext);
-        if (officeText && officeText.trim().length > 0) {
+        const text = this.extractOfficeZipText(buffer);
+        if (text.length > 0) {
           return {
             success: true,
             fileType: "office",
-            mimeType: mimeType || "application/octet-stream",
-            extractedText: officeText.slice(0, 50000),
+            mimeType:
+              mimeType ||
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            extractedText: text.slice(0, this.MAX_TEXT_LENGTH),
           };
         }
       } catch {
-        /* fallback to unsupported message */
+        // Fall through to fallback notice
       }
+
+      return {
+        success: true,
+        fileType: "office",
+        mimeType,
+        extractedText: `[Office Document: ${fileName} (${(buffer.length / 1024).toFixed(1)} KB) attached]`,
+      };
+    }
+
+    // 5. PDF Documents
+    if (mimeType === "application/pdf" || ext === "pdf") {
+      const text = this.extractPdfStrings(buffer);
+      return {
+        success: true,
+        fileType: "pdf",
+        mimeType: "application/pdf",
+        extractedText:
+          text.length > 0
+            ? text.slice(0, this.MAX_TEXT_LENGTH)
+            : `[PDF Document: ${fileName} (${(buffer.length / 1024).toFixed(1)} KB) attached]`,
+      };
     }
 
     return {
       success: false,
       fileType: "unknown",
       mimeType,
-      error: `File format (.${ext || "unknown"}) is not supported for automatic text extraction. Supported formats include images, PDF documents, text, code, and spreadsheets.`,
+      error: `Unsupported file extension .${ext}`,
     };
   }
 
-  /**
-   * Robust plain text extractor for standard PDF streams without external binary dependencies
-   */
-  private extractPdfText(buffer: Buffer): string {
-    const raw = buffer.toString("binary");
+  // Decompresses ZIP central directory local files to find document XML
+  private extractOfficeZipText(buffer: Buffer): string {
     const textPieces: string[] = [];
+    let offset = 0;
 
-    // Find standard text showing operators: (text) Tj or [(t)(e)(x)(t)] TJ
-    const tjRegex = /\(([^)]+)\)\s*Tj/g;
-    let match: RegExpExecArray | null;
-    while ((match = tjRegex.exec(raw)) !== null) {
-      if (match[1]) textPieces.push(match[1]);
-    }
+    // Search for local file headers (0x04034b50)
+    while (offset < buffer.length - 30) {
+      if (
+        buffer[offset] === 0x50 &&
+        buffer[offset + 1] === 0x4b &&
+        buffer[offset + 2] === 0x03 &&
+        buffer[offset + 3] === 0x04
+      ) {
+        const compressionMethod = buffer.readUInt16LE(offset + 8);
+        const compressedSize = buffer.readUInt32LE(offset + 18);
+        const fileNameLength = buffer.readUInt16LE(offset + 26);
+        const extraFieldLength = buffer.readUInt16LE(offset + 28);
 
-    // Array form
-    const arrayTjRegex = /\[([^\]]+)\]\s*TJ/g;
-    while ((match = arrayTjRegex.exec(raw)) !== null) {
-      if (match[1]) {
-        const inner = match[1].replace(/\(([^)]+)\)/g, "$1 ");
-        textPieces.push(inner.replace(/-?\d+(\.\d+)?/g, "").trim());
-      }
-    }
+        const fileNameStart = offset + 30;
+        const fileName = buffer.toString(
+          "utf-8",
+          fileNameStart,
+          fileNameStart + fileNameLength,
+        );
+        const dataStart = fileNameStart + fileNameLength + extraFieldLength;
 
-    // If stream contains FlateDecode, decompress streams and search
-    if (textPieces.length === 0) {
-      const streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
-      let streamMatch: RegExpExecArray | null;
-      while ((streamMatch = streamRegex.exec(raw)) !== null) {
-        try {
-          const streamData = Buffer.from(streamMatch[1]!, "binary");
-          const decompressed = zlib.inflateSync(streamData);
-          const decompText = decompressed.toString("utf-8");
-          const innerTj = /\(([^)]+)\)\s*Tj/g;
-          let m: RegExpExecArray | null;
-          while ((m = innerTj.exec(decompText)) !== null) {
-            if (m[1]) textPieces.push(m[1]);
+        if (
+          fileName === "word/document.xml" ||
+          fileName === "ppt/slides/slide1.xml" ||
+          fileName === "xl/sharedStrings.xml"
+        ) {
+          const compressedData = buffer.subarray(
+            dataStart,
+            dataStart + compressedSize,
+          );
+          let xmlContent = "";
+
+          if (compressionMethod === 8) {
+            try {
+              xmlContent = zlib.inflateRawSync(compressedData).toString("utf-8");
+            } catch {
+              // Ignore corrupted compressed stream
+            }
+          } else if (compressionMethod === 0) {
+            xmlContent = compressedData.toString("utf-8");
           }
-        } catch {
-          // ignore stream decompression failures
+
+          const matches = xmlContent.match(/<[^>]+>([^<]+)<\/[^>]+>/g);
+          if (matches) {
+            for (const m of matches) {
+              const cleaned = m.replace(/<[^>]+>/g, "").trim();
+              if (cleaned) textPieces.push(cleaned);
+            }
+          }
         }
+        offset = dataStart + compressedSize;
+      } else {
+        offset++;
       }
     }
 
-    return textPieces
-      .join(" ")
-      .replace(/\\([()\\])/g, "$1")
-      .trim();
+    return textPieces.join(" ").trim();
   }
 
-  /**
-   * Extract XML text from ZIP-based Office files (DOCX, XLSX)
-   */
-  private extractOfficeText(buffer: Buffer, ext: string): string {
-    const raw = buffer.toString("binary");
-    // Look for XML text nodes <w:t>...</w:t> (Word) or <t>...</t> (Excel shared strings)
-    const textNodes: string[] = [];
-    const xmlRegex = /<(?:w:t|t)[^>]*>([^<]+)<\/(?:w:t|t)>/g;
-    let m: RegExpExecArray | null;
-    while ((m = xmlRegex.exec(raw)) !== null) {
-      if (m[1]) textNodes.push(m[1]);
+  private extractPdfStrings(buffer: Buffer): string {
+    const raw = buffer.toString("latin1");
+    const pieces: string[] = [];
+    const tjRegex = /\(([^)]+)\)\s*Tj/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = tjRegex.exec(raw)) !== null) {
+      if (match[1]) pieces.push(match[1]);
     }
-    return textNodes.join(" ").trim();
+
+    return pieces.join(" ").replace(/\\([()\\])/g, "$1").trim();
   }
 }
 

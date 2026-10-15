@@ -9,7 +9,7 @@ const CreateKeysSchema = z.object({
   adminNote: z.string().max(200).optional(),
   role: z.enum(["admin", "user"]).default("user"),
   assignedUserId: z.string().trim().min(1).max(128).optional().nullable(),
-  purpose: z.enum(["NEW_USER", "REPLACEMENT"]).optional(),
+  purpose: z.string().optional(),
 });
 
 export const Route = createFileRoute("/api/admin/keys")({
@@ -19,38 +19,19 @@ export const Route = createFileRoute("/api/admin/keys")({
       GET: async ({ request }) => {
         const auth = await requireAdminAuth(request);
         if (auth instanceof Response) return auth;
-
-        try {
-          const keys = await listInvitationKeysDb();
-          return corsJson({ success: true, keys });
-        } catch (err) {
-          console.error("Failed to list keys:", err);
-          return corsJson({ success: false, error: "Failed to list invitation keys." }, { status: 500 });
-        }
+        const keys = await listInvitationKeysDb();
+        return corsJson({ success: true, keys });
       },
       POST: async ({ request }) => {
         const auth = await requireAdminAuth(request);
         if (auth instanceof Response) return auth;
-
         try {
-          const body = await request.json().catch(() => ({}));
+          const body = await request.json();
           const parsed = CreateKeysSchema.parse(body);
-
-          const keys = await createInvitationKeysDb(
-            parsed.count,
-            parsed.adminNote,
-            parsed.durationMs,
-            parsed.role,
-            parsed.assignedUserId,
-            parsed.purpose,
-          );
+          const keys = await createInvitationKeysDb(parsed);
           return corsJson({ success: true, keys });
-        } catch (err) {
-          const message =
-            err instanceof z.ZodError
-              ? err.errors[0]?.message || "Invalid payload."
-              : (err as Error)?.message || "Failed to generate invitation keys.";
-          return corsJson({ success: false, error: message }, { status: 400 });
+        } catch (err: unknown) {
+          return corsJson({ success: false, error: (err as Error).message }, { status: 400 });
         }
       },
     },

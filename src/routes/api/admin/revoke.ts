@@ -14,26 +14,13 @@ export const Route = createFileRoute("/api/admin/revoke")({
       POST: async ({ request }) => {
         const auth = await requireAdminAuth(request);
         if (auth instanceof Response) return auth;
-
         try {
           const body = await request.json();
           const parsed = RevokeSchema.parse(body);
-
-          const success = await revokeInvitationKeyDb(parsed.keyId);
-          if (!success) {
-            return corsJson(
-              { success: false, error: "Key not found or could not be revoked." },
-              { status: 404 },
-            );
-          }
-
-          return corsJson({ success: true, revokedKeyId: parsed.keyId });
-        } catch (err) {
-          const message =
-            err instanceof z.ZodError
-              ? err.errors[0]?.message || "Invalid payload."
-              : "Failed to revoke invitation key.";
-          return corsJson({ success: false, error: message }, { status: 400 });
+          const ok = await revokeInvitationKeyDb(parsed.keyId);
+          return corsJson({ success: ok });
+        } catch (err: unknown) {
+          return corsJson({ success: false, error: (err as Error).message }, { status: 400 });
         }
       },
     },

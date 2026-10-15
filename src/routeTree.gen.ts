@@ -10,20 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiConversationsRouteImport } from './routes/api/conversations'
 import { Route as ApiLiveTokenRouteImport } from './routes/api/live-token'
+import { Route as ApiLogoutRouteImport } from './routes/api/logout'
 import { Route as ApiMediaRouteImport } from './routes/api/media'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
 import { Route as ApiSettingsRouteImport } from './routes/api/settings'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
+import { Route as ApiValidateRouteImport } from './routes/api/validate'
 import { Route as ApiAdminKeysRouteImport } from './routes/api/admin/keys'
 import { Route as ApiAdminRevokeRouteImport } from './routes/api/admin/revoke'
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthRedeemRouteImport } from './routes/api/auth/redeem'
 import { Route as ApiAuthValidateRouteImport } from './routes/api/auth/validate'
-import { Route as ApiChatMultimodalRouteImport } from './routes/api/chat.multimodal'
+import { Route as ApiChatMultimodalRouteImport } from './routes/api/chat/multimodal'
 import { Route as ApiFilesUploadRouteImport } from './routes/api/files/upload'
 import { Route as ApiImagesEditRouteImport } from './routes/api/images/edit'
 import { Route as ApiImagesGenerateRouteImport } from './routes/api/images/generate'
@@ -31,6 +34,11 @@ import { Route as ApiImagesGenerateRouteImport } from './routes/api/images/gener
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -46,6 +54,11 @@ const ApiConversationsRoute = ApiConversationsRouteImport.update({
 const ApiLiveTokenRoute = ApiLiveTokenRouteImport.update({
   id: '/api/live-token',
   path: '/api/live-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLogoutRoute = ApiLogoutRouteImport.update({
+  id: '/api/logout',
+  path: '/api/logout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMediaRoute = ApiMediaRouteImport.update({
@@ -66,6 +79,11 @@ const ApiSettingsRoute = ApiSettingsRouteImport.update({
 const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
   id: '/api/transcribe',
   path: '/api/transcribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiValidateRoute = ApiValidateRouteImport.update({
+  id: '/api/validate',
+  path: '/api/validate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminKeysRoute = ApiAdminKeysRouteImport.update({
@@ -121,13 +139,16 @@ const ApiImagesGenerateRoute = ApiImagesGenerateRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/api/chat': typeof ApiChatRouteWithChildren
   '/api/conversations': typeof ApiConversationsRoute
   '/api/live-token': typeof ApiLiveTokenRoute
+  '/api/logout': typeof ApiLogoutRoute
   '/api/media': typeof ApiMediaRoute
   '/api/search': typeof ApiSearchRoute
   '/api/settings': typeof ApiSettingsRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/api/validate': typeof ApiValidateRoute
   '/api/admin/keys': typeof ApiAdminKeysRoute
   '/api/admin/revoke': typeof ApiAdminRevokeRoute
   '/api/admin/users': typeof ApiAdminUsersRoute
@@ -141,13 +162,16 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/api/chat': typeof ApiChatRouteWithChildren
   '/api/conversations': typeof ApiConversationsRoute
   '/api/live-token': typeof ApiLiveTokenRoute
+  '/api/logout': typeof ApiLogoutRoute
   '/api/media': typeof ApiMediaRoute
   '/api/search': typeof ApiSearchRoute
   '/api/settings': typeof ApiSettingsRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/api/validate': typeof ApiValidateRoute
   '/api/admin/keys': typeof ApiAdminKeysRoute
   '/api/admin/revoke': typeof ApiAdminRevokeRoute
   '/api/admin/users': typeof ApiAdminUsersRoute
@@ -162,13 +186,16 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/api/chat': typeof ApiChatRouteWithChildren
   '/api/conversations': typeof ApiConversationsRoute
   '/api/live-token': typeof ApiLiveTokenRoute
+  '/api/logout': typeof ApiLogoutRoute
   '/api/media': typeof ApiMediaRoute
   '/api/search': typeof ApiSearchRoute
   '/api/settings': typeof ApiSettingsRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/api/validate': typeof ApiValidateRoute
   '/api/admin/keys': typeof ApiAdminKeysRoute
   '/api/admin/revoke': typeof ApiAdminRevokeRoute
   '/api/admin/users': typeof ApiAdminUsersRoute
@@ -184,13 +211,16 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/api/chat'
     | '/api/conversations'
     | '/api/live-token'
+    | '/api/logout'
     | '/api/media'
     | '/api/search'
     | '/api/settings'
     | '/api/transcribe'
+    | '/api/validate'
     | '/api/admin/keys'
     | '/api/admin/revoke'
     | '/api/admin/users'
@@ -204,13 +234,16 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/api/chat'
     | '/api/conversations'
     | '/api/live-token'
+    | '/api/logout'
     | '/api/media'
     | '/api/search'
     | '/api/settings'
     | '/api/transcribe'
+    | '/api/validate'
     | '/api/admin/keys'
     | '/api/admin/revoke'
     | '/api/admin/users'
@@ -224,13 +257,16 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/api/chat'
     | '/api/conversations'
     | '/api/live-token'
+    | '/api/logout'
     | '/api/media'
     | '/api/search'
     | '/api/settings'
     | '/api/transcribe'
+    | '/api/validate'
     | '/api/admin/keys'
     | '/api/admin/revoke'
     | '/api/admin/users'
@@ -245,13 +281,16 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   ApiChatRoute: typeof ApiChatRouteWithChildren
   ApiConversationsRoute: typeof ApiConversationsRoute
   ApiLiveTokenRoute: typeof ApiLiveTokenRoute
+  ApiLogoutRoute: typeof ApiLogoutRoute
   ApiMediaRoute: typeof ApiMediaRoute
   ApiSearchRoute: typeof ApiSearchRoute
   ApiSettingsRoute: typeof ApiSettingsRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
+  ApiValidateRoute: typeof ApiValidateRoute
   ApiAdminKeysRoute: typeof ApiAdminKeysRoute
   ApiAdminRevokeRoute: typeof ApiAdminRevokeRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
@@ -270,6 +309,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -291,6 +337,13 @@ declare module '@tanstack/react-router' {
       path: '/api/live-token'
       fullPath: '/api/live-token'
       preLoaderRoute: typeof ApiLiveTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/logout': {
+      id: '/api/logout'
+      path: '/api/logout'
+      fullPath: '/api/logout'
+      preLoaderRoute: typeof ApiLogoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/media': {
@@ -319,6 +372,13 @@ declare module '@tanstack/react-router' {
       path: '/api/transcribe'
       fullPath: '/api/transcribe'
       preLoaderRoute: typeof ApiTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/validate': {
+      id: '/api/validate'
+      path: '/api/validate'
+      fullPath: '/api/validate'
+      preLoaderRoute: typeof ApiValidateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/keys': {
@@ -407,13 +467,16 @@ const ApiChatRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   ApiChatRoute: ApiChatRouteWithChildren,
   ApiConversationsRoute: ApiConversationsRoute,
   ApiLiveTokenRoute: ApiLiveTokenRoute,
+  ApiLogoutRoute: ApiLogoutRoute,
   ApiMediaRoute: ApiMediaRoute,
   ApiSearchRoute: ApiSearchRoute,
   ApiSettingsRoute: ApiSettingsRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
+  ApiValidateRoute: ApiValidateRoute,
   ApiAdminKeysRoute: ApiAdminKeysRoute,
   ApiAdminRevokeRoute: ApiAdminRevokeRoute,
   ApiAdminUsersRoute: ApiAdminUsersRoute,

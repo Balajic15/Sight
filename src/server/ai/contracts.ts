@@ -14,7 +14,7 @@ export interface AIRequestContext {
   taskType: TaskType;
   provider: AIProvider;
   model: string;
-  sessionId?: string | undefined;
+  sessionId?: string;
 }
 
 export interface AIResult<T = unknown> {
@@ -23,31 +23,16 @@ export interface AIResult<T = unknown> {
   provider: AIProvider;
   model: string;
   success: boolean;
-  data?: T | undefined;
-  errorCode?: string | undefined;
-  errorMessage?: string | undefined;
+  data?: T;
+  errorCode?: string;
+  errorMessage?: string;
 }
 
 export type AIStreamEvent =
   | { type: "text_delta"; operationId: string; text: string }
   | { type: "completed"; operationId: string }
   | { type: "failed"; operationId: string; errorCode: string; errorMessage: string }
-  | { type: "media_ready"; operationId: string; mediaId: string; mediaUrl?: string | undefined };
-
-export type AIErrorCode =
-  | "AUTHENTICATION_FAILED"
-  | "FORBIDDEN"
-  | "RATE_LIMITED"
-  | "INVALID_MODEL"
-  | "UNSUPPORTED_MODALITY"
-  | "BAD_REQUEST"
-  | "TIMEOUT"
-  | "NETWORK_ERROR"
-  | "MALFORMED_RESPONSE"
-  | "PROVIDER_ERROR"
-  | "CANCELLED"
-  | "STALE_OPERATION"
-  | "DUPLICATE_OPERATION";
+  | { type: "media_ready"; operationId: string; mediaId: string; mediaUrl?: string };
 
 export const SUPPORTED_PROVIDER_TASKS: Record<AIProvider, readonly TaskType[]> = {
   google: ["text_chat", "file_understanding", "realtime_voice", "image_understanding"],
@@ -68,32 +53,15 @@ export const DEFAULT_PROVIDER_MODELS: Record<AIProvider, Partial<Record<TaskType
   },
 };
 
-export function validateRequestContext(ctx: AIRequestContext): {
-  valid: boolean;
-  error?: string | undefined;
-} {
-  if (!ctx.operationId || !ctx.operationId.trim()) {
-    return { valid: false, error: "Missing required operationId." };
-  }
-  if (!ctx.conversationId || !ctx.conversationId.trim()) {
-    return { valid: false, error: "Missing required conversationId." };
-  }
-
+export function validateRequestContext(ctx: AIRequestContext): { valid: boolean; error?: string } {
+  if (!ctx.operationId?.trim()) return { valid: false, error: "Missing required operationId." };
+  if (!ctx.conversationId?.trim()) return { valid: false, error: "Missing required conversationId." };
   if (ctx.provider !== "google" && ctx.provider !== "nvidia") {
     return { valid: false, error: `Unsupported AI provider: ${ctx.provider}` };
   }
-
-  const supportedTasks = SUPPORTED_PROVIDER_TASKS[ctx.provider];
-  if (!supportedTasks.includes(ctx.taskType)) {
-    return {
-      valid: false,
-      error: `Provider '${ctx.provider}' does not support task '${ctx.taskType}'.`,
-    };
+  const supported = SUPPORTED_PROVIDER_TASKS[ctx.provider];
+  if (!supported.includes(ctx.taskType)) {
+    return { valid: false, error: `Provider '${ctx.provider}' does not support '${ctx.taskType}'` };
   }
-
-  if (!ctx.model || !ctx.model.trim()) {
-    return { valid: false, error: "Missing required model identifier." };
-  }
-
   return { valid: true };
 }

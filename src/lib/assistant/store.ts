@@ -48,6 +48,7 @@ export type Msg = {
   requiresDisambiguation?: boolean | undefined;
   candidateImages?: Array<{ id: string; url: string; prompt: string }> | undefined;
 };
+export type Message = Msg;
 export type Conversation = { id: string; title: string; updatedAt: number; messages: Msg[] };
 export type Settings = {
   chatModel: string;

@@ -1,31 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { redeemInvitationKeyAtomic, validateSessionTokenDb } from "@/server/db";
-import { extractBearerToken, corsJson, corsOptions } from "@/server/auth";
+import { redeemInvitationKeyAtomic } from "@/server/db";
+import { corsJson, corsOptions } from "@/server/auth";
 
 const RedeemSchema = z.object({
-  key: z.string().min(1, "Invitation key is required"),
+  key: z.string().trim().min(4).max(128),
 });
 
-const failedAttemptsMap = new Map<string, { count: number; resetAt: number }>();
+// Self-pruning sliding window rate limiter
+const attempts = new Map<string, { count: number; resetAt: number }>();
 
-function checkRateLimit(ip: string): boolean {
+function isRateLimited(ip: string): boolean {
   const now = Date.now();
-  const record = failedAttemptsMap.get(ip);
-  if (!record || now > record.resetAt) {
-    return true;
-  }
-  return record.count < 10;
-}
+  const record = attempts.get(ip);
 
-function recordFailedAttempt(ip: string) {
-  const now = Date.now();
-  const record = failedAttemptsMap.get(ip);
   if (!record || now > record.resetAt) {
-    failedAttemptsMap.set(ip, { count: 1, resetAt: now + 5 * 60 * 1000 });
-  } else {
-    record.count++;
+    attempts.set(ip, { count: 1, resetAt: now + 60_000 });
+    return false;
   }
+
+  record.count++;
+  return record.count > 10; // Max 10 attempts per minute
 }
 
 export const Route = createFileRoute("/api/auth/redeem")({
@@ -35,69 +30,45 @@ export const Route = createFileRoute("/api/auth/redeem")({
       POST: async ({ request }) => {
         const ip =
           request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-          request.headers.get("cf-connecting-ip") ||
-          "client";
+          "unknown-ip";
 
-        if (!checkRateLimit(ip)) {
+        if (isRateLimited(ip)) {
           return corsJson(
-            {
-              success: false,
-              error: "Too many failed redemption attempts. Please wait 5 minutes before trying again.",
-            },
+            { error: "Too many redemption attempts. Please wait 1 minute." },
             { status: 429 },
           );
         }
 
-        // Active Session Guard: do not silently replace identity if an active session exists
-        const existingToken = extractBearerToken(request);
-        if (existingToken) {
-          const existingSession = await validateSessionTokenDb(existingToken);
-          if (existingSession.valid && existingSession.session) {
-            return corsJson(
-              {
-                success: false,
-                code: "ACTIVE_SESSION_EXISTS",
-                error:
-                  "An active user session already exists. Please log out first before redeeming a new invitation key.",
-              },
-              { status: 409 },
-            );
-          }
+        let body: z.infer<typeof RedeemSchema>;
+        try {
+          body = RedeemSchema.parse(await request.json());
+        } catch {
+          return corsJson({ error: "Invalid invitation key format." }, { status: 400 });
         }
 
         try {
-          const body = await request.json();
-          const parsed = RedeemSchema.parse(body);
+          const result = await redeemInvitationKeyAtomic(body.key);
 
-          const result = await redeemInvitationKeyAtomic(parsed.key);
-          if (!result.success) {
-            recordFailedAttempt(ip);
+          if (!result.success || !result.sessionToken) {
             return corsJson(
-              {
-                success: false,
-                error: result.error || "Failed to redeem invitation key.",
-              },
+              { error: result.error || "Invalid or already redeemed key." },
               { status: 400 },
             );
           }
 
-          failedAttemptsMap.delete(ip);
-
           return corsJson({
             success: true,
-            sessionToken: result.sessionToken,
+            token: result.sessionToken,
+            role: result.isAdmin ? "admin" : "user",
             userId: result.userId,
-            expiresAt: result.expiresAt || null,
-            remainingMs: result.remainingMs ?? null,
-            isAdmin: Boolean(result.isAdmin),
+            expiresAt: result.expiresAt,
           });
-        } catch (err) {
-          recordFailedAttempt(ip);
-          const message =
-            err instanceof z.ZodError
-              ? err.errors[0]?.message || "Invalid request body."
-              : "Failed to redeem invitation key.";
-          return corsJson({ success: false, error: message }, { status: 400 });
+        } catch (error) {
+          console.error("[Redeem] Database redemption failure:", error);
+          return corsJson(
+            { error: "Internal key redemption error." },
+            { status: 500 },
+          );
         }
       },
     },

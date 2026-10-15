@@ -1,17 +1,18 @@
 import { validateSessionTokenDb, getMasterAdminKey } from "./db";
-import fs from "node:fs";
-import path from "node:path";
+import crypto from "node:crypto";
 
-export const CORS_HEADERS = {
+export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-session-token, x-admin-secret",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, x-session-token, x-admin-secret",
+  "Access-Control-Max-Age": "86400",
 };
 
 export function corsJson(data: unknown, init?: ResponseInit): Response {
   const headers = new Headers(init?.headers);
-  for (const [k, v] of Object.entries(CORS_HEADERS)) {
-    headers.set(k, v);
+  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+    headers.set(key, value);
   }
   return Response.json(data, { ...init, headers });
 }
@@ -23,45 +24,41 @@ export function corsOptions(): Response {
   });
 }
 
-function getAdminSecret(): string {
-  if (process.env["ADMIN_SECRET"]) return process.env["ADMIN_SECRET"];
-  try {
-    const envPath = path.resolve(process.cwd(), ".env");
-    if (fs.existsSync(envPath)) {
-      const content = fs.readFileSync(envPath, "utf-8");
-      for (const line of content.split("\n")) {
-        const match = line.match(/^\s*ADMIN_SECRET\s*=\s*(.*?)\s*$/);
-        if (match && match[1]) return match[1].replace(/^["']|["']$/g, "").trim();
-      }
-    }
-  } catch {
-    /* ignore read errors */
-  }
-  return "echo-admin-secure-pass-2026";
+function safeCompare(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+function getAdminSecret(): string | null {
+  const secret = process.env["ADMIN_SECRET"]?.trim();
+  return secret && secret.length >= 16 ? secret : null;
 }
 
 export function extractBearerToken(request: Request): string | null {
-  const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
+  const authHeader =
+    request.headers.get("authorization") ||
+    request.headers.get("Authorization");
   if (authHeader) {
-    const parts = authHeader.split(" ");
-    if (parts.length === 2 && parts[0]?.toLowerCase() === "bearer") {
-      return parts[1]!.trim();
+    const [scheme, token] = authHeader.split(/\s+/);
+    if (scheme?.toLowerCase() === "bearer" && token) {
+      return token.trim();
     }
   }
 
-  // Fallback to custom session header
   const customHeader = request.headers.get("x-session-token");
-  if (customHeader) {
+  if (customHeader?.trim()) {
     return customHeader.trim();
   }
 
-  // Fallback to query param
   try {
     const url = new URL(request.url);
     const queryToken = url.searchParams.get("token");
-    if (queryToken) return queryToken.trim();
+    if (queryToken?.trim()) return queryToken.trim();
   } catch {
-    /* ignore url parse error */
+    // Ignore invalid request URL parsing
   }
 
   return null;
@@ -83,46 +80,64 @@ export async function requireSessionAuth(
   if (!token) {
     return corsJson(
       {
-        error: "Authentication required. Please enter a valid invitation key.",
+        error: "Authentication required. Please provide a valid session token.",
         code: "UNAUTHENTICATED",
       },
       { status: 401 },
     );
   }
 
-  const validation = await validateSessionTokenDb(token);
-  if (!validation.valid || !validation.session) {
-    const isExpired = validation.reason === "expired";
+  try {
+    const validation = await validateSessionTokenDb(token);
+    if (!validation.valid || !validation.session) {
+      const isExpired = validation.reason === "expired";
+      return corsJson(
+        {
+          error: isExpired
+            ? "Your session has expired. Please log in or redeem a new key."
+            : "Invalid or revoked session.",
+          code: isExpired ? "SESSION_EXPIRED" : "INVALID_SESSION",
+          expiresAt: validation.session?.expiresAt || null,
+        },
+        { status: 401 },
+      );
+    }
+
+    return { session: validation.session as AuthenticatedSession };
+  } catch (error) {
+    console.error("[Auth] Session validation database error:", error);
     return corsJson(
-      {
-        error: isExpired
-          ? "Your access has expired. Enter a new Invitation Key to continue."
-          : "Invalid or revoked access session. Please enter a valid invitation key.",
-        code: isExpired ? "SESSION_EXPIRED" : "INVALID_SESSION",
-        expiresAt: validation.session?.expiresAt || null,
-      },
-      { status: 401 },
+      { error: "Authentication service temporarily unavailable.", code: "AUTH_ERROR" },
+      { status: 503 },
     );
   }
-
-  return { session: validation.session };
 }
 
-export async function requireAdminAuth(request: Request): Promise<boolean | Response> {
+export async function requireAdminAuth(
+  request: Request,
+): Promise<boolean | Response> {
   const masterKey = getMasterAdminKey();
   const configuredSecret = getAdminSecret();
-  const adminSecretHeader = request.headers.get("x-admin-secret");
+  const adminSecretHeader = request.headers.get("x-admin-secret")?.trim();
   const token = extractBearerToken(request);
 
-  const providedSecret = adminSecretHeader?.trim();
-  if (providedSecret && (providedSecret === masterKey || providedSecret === configuredSecret)) {
-    return true;
+  if (adminSecretHeader) {
+    if (
+      (masterKey && safeCompare(adminSecretHeader, masterKey)) ||
+      (configuredSecret && safeCompare(adminSecretHeader, configuredSecret))
+    ) {
+      return true;
+    }
   }
 
   if (token) {
-    if (token === masterKey || token === configuredSecret) {
+    if (
+      (masterKey && safeCompare(token, masterKey)) ||
+      (configuredSecret && safeCompare(token, configuredSecret))
+    ) {
       return true;
     }
+
     const validation = await validateSessionTokenDb(token);
     if (validation.valid && validation.session?.isAdmin) {
       return true;
@@ -131,7 +146,7 @@ export async function requireAdminAuth(request: Request): Promise<boolean | Resp
 
   return corsJson(
     {
-      error: "Unauthorized. Administrator authorization required.",
+      error: "Unauthorized. Administrator credentials required.",
       code: "UNAUTHORIZED_ADMIN",
     },
     { status: 403 },

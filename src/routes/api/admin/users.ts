@@ -9,19 +9,10 @@ export const Route = createFileRoute("/api/admin/users")({
       GET: async ({ request }) => {
         const auth = await requireAdminAuth(request);
         if (auth instanceof Response) return auth;
-
-        try {
-          const url = new URL(request.url);
-          const q = url.searchParams.get("q") || undefined;
-          const users = await listUsersDb(q);
-          return corsJson({ success: true, users });
-        } catch (err) {
-          console.error("Failed to list users:", err);
-          return corsJson(
-            { success: false, error: "Failed to list users." },
-            { status: 500 },
-          );
-        }
+        const url = new URL(request.url);
+        const q = url.searchParams.get("q") || undefined;
+        const users = await listUsersDb(q);
+        return corsJson({ success: true, users });
       },
     },
   },
